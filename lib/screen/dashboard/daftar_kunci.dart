@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:kunci_pintu_iot/network/api.dart';
-import 'package:intl/intl.dart';
 import 'dart:convert';
 
 import '../auth/halaman_login.dart';
@@ -8,49 +7,49 @@ import 'dashboard.dart';
 import 'profile.dart';
 // import 'dashboard.dart';
 
-class HistoryAccessCard {
+class AccessCard {
   final String name;
   final String time;
+  final String limit;
   final String status;
 
-  HistoryAccessCard({
+  AccessCard({
     required this.name,
     required this.time,
+    required this.limit,
     required this.status,
   });
 
-  factory HistoryAccessCard.fromJson(Map<String, dynamic> json) {
-    return HistoryAccessCard(
+  factory AccessCard.fromJson(Map<String, dynamic> json) {
+    return AccessCard(
       name: json['door']['name'],
-      time: json['created_at'],
-      status: json['log'],
+      time: json['time_begin'] + " sd " + json['time_end'],
+      limit: json['date_begin'] == null
+          ? "Tidak Terbatas"
+          : json['date_begin'] + " sd " + json['date_end'],
+      status: json['is_running'] == 1 ? "Aktif" : "Terblokir",
     );
   }
 }
 
-class RiwayatAkses extends StatefulWidget {
-  const RiwayatAkses({super.key});
+class DaftarKunci extends StatefulWidget {
+  const DaftarKunci({super.key});
 
   @override
-  State<RiwayatAkses> createState() => _RiwayatAksesState();
+  State<DaftarKunci> createState() => _DaftarKunciState();
 }
 
-class _RiwayatAksesState extends State<RiwayatAkses> {
-  List<HistoryAccessCard> _historyAccessCardList = [];
+class _DaftarKunciState extends State<DaftarKunci> {
+  List<AccessCard> _accessCardList = [];
+
   @override
   void initState() {
     super.initState();
-    _fetchHistoryAccessData();
+    _fetchAccessData();
   }
 
-  String formatTimestamp(String timestamp) {
-    DateTime dateTime = DateTime.parse(timestamp);
-    String formattedDate = DateFormat('dd-MM-yyyy HH:mm:ss').format(dateTime);
-    return formattedDate;
-  }
-
-  Future<void> _fetchHistoryAccessData() async {
-    final response = await NetworkAPI().getAPI('/my-history', true);
+  Future<void> _fetchAccessData() async {
+    final response = await NetworkAPI().getAPI('/my-access', true);
 
     var dataRespon = json.decode(response.body);
 
@@ -68,14 +67,14 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
     if (dataRespon['status'] == 'success') {
       final List<dynamic> jsonData =
           dataRespon['data']; // Access the "data" key
-      List<HistoryAccessCard> historyAccessCard =
-          jsonData.map((data) => HistoryAccessCard.fromJson(data)).toList();
+      List<AccessCard> accessCard =
+          jsonData.map((data) => AccessCard.fromJson(data)).toList();
 
       setState(() {
-        _historyAccessCardList = historyAccessCard;
+        _accessCardList = accessCard;
       });
-    } else if (dataRespon['status'] == 'un') {
-      throw Exception('Failed to load access data');
+    } else {
+      throw Exception('failed to load access data');
     }
   }
 
@@ -84,7 +83,7 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
     return Scaffold(
       backgroundColor: const Color(0xFF2C0089),
       appBar: AppBar(
-        title: const Text('Riwayat Akses Anda'),
+        title: const Text('Daftar Kunci Anda'),
       ),
       body: Container(
         padding: const EdgeInsets.all(20),
@@ -93,9 +92,9 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
           children: [
             Expanded(
               child: ListView.builder(
-                  itemCount: _historyAccessCardList.length,
+                  itemCount: _accessCardList.length,
                   itemBuilder: (context, index) {
-                    final myHistoryAccessCard = _historyAccessCardList[index];
+                    final myAccessCard = _accessCardList[index];
                     return Column(
                       children: [
                         Container(
@@ -109,7 +108,7 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
                             mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               const Icon(
-                                Icons.history_outlined,
+                                Icons.key,
                                 size: 30,
                                 color: Colors.black,
                               ),
@@ -120,7 +119,7 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    myHistoryAccessCard.name,
+                                    myAccessCard.name,
                                     style: const TextStyle(
                                       color: Colors.black,
                                       fontSize: 15,
@@ -131,7 +130,12 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
                                     height: 5,
                                   ),
                                   Text(
-                                    formatTimestamp(myHistoryAccessCard.time),
+                                    myAccessCard.time,
+                                    style: const TextStyle(
+                                        color: Colors.black, fontSize: 12),
+                                  ),
+                                  Text(
+                                    myAccessCard.limit,
                                     style: const TextStyle(
                                         color: Colors.black, fontSize: 12),
                                   ),
@@ -139,7 +143,7 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
                                     height: 5,
                                   ),
                                   Text(
-                                    myHistoryAccessCard.status,
+                                    myAccessCard.status,
                                     style: const TextStyle(
                                         color: Colors.black, fontSize: 12),
                                   ),
@@ -182,16 +186,11 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
                 IconButton(
                   icon: const Icon(Icons.home, color: Colors.white),
                   onPressed: () {
-                    // Navigator.pushReplacement(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => const Dashboard()),
-                    // );
-                    Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Dashboard()),
-                        (route) => false);
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Dashboard()),
+                    );
                   },
                 ),
                 const SizedBox(

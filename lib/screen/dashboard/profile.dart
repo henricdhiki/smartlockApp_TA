@@ -1,13 +1,85 @@
 import 'package:flutter/material.dart';
+import 'package:kunci_pintu_iot/network/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+
+import '../auth/halaman_login.dart';
 import 'dashboard.dart';
+import 'update_profile.dart';
 
-class Profile extends StatelessWidget {
-  final String _profileImagePath = 'path/to/profile_image.jpg';
-  const Profile({Key? key}) : super(key: key);
+class Profile extends StatefulWidget {
+  const Profile({super.key});
 
-  void _selectNewProfilePhoto() {
-    // Implementasi aksi yang diinginkan saat tombol kamera pada avatar profil ditekan
-    // Misalnya, menampilkan dialog untuk memilih gambar baru
+  @override
+  State<Profile> createState() => _ProfileState();
+}
+
+class _ProfileState extends State<Profile> {
+  ImageProvider? _imageProvider;
+
+  String name = '', email = '', gender = '', phone = '', role = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var userData = localStorage.getString('userData');
+
+    if (userData != null && userData.isNotEmpty) {
+      var user = json.decode(userData);
+
+      setState(() {
+        name = user['name'];
+        email = user['email'];
+        gender = user['gender'];
+        role = user['role'];
+        phone = user['phone'];
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    final response = await NetworkAPI().getAPI('/logout', true);
+    var dataRespon = json.decode(response.body);
+
+    if (dataRespon['status'] == 'success') {
+      SharedPreferences localStorage = await SharedPreferences.getInstance();
+      await localStorage.setBool('isLogin', false);
+
+      if (context.mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HalamanLogin()),
+        );
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+            'Logout Gagal',
+            textAlign: TextAlign.center,
+          ),
+          duration: Duration(seconds: 2),
+        ));
+      }
+    }
+  }
+
+  Future<void> _loadImage() async {
+    try {
+      final response = await NetworkAPI().getAPI('/avatar', true);
+
+      setState(() {
+        _imageProvider = MemoryImage(response.bodyBytes);
+      });
+    } catch (e) {
+      throw Exception("failed to load avatar image : $e");
+    }
   }
 
   @override
@@ -15,116 +87,133 @@ class Profile extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(0xFF2C0089),
       body: Container(
-        child: Column(
-          children: [
-            SizedBox(height: 24),
-            Center(
-              child: Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 77,
-                    backgroundImage: AssetImage(_profileImagePath),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.camera_alt),
-                    onPressed: _selectNewProfilePhoto,
-                  ),
-                ],
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const SizedBox(height: 30),
+              CircleAvatar(
+                radius: 77,
+                backgroundImage: _imageProvider,
+                backgroundColor: Colors.black26,
               ),
-            ),
-            SizedBox(height: 16),
-            const Text(
-              'Henric Dhiki Wicaksono',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              const SizedBox(height: 20),
+              Text(
+                name,
+                style: const TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            SizedBox(height: 8),
-            const Text(
-              'henricdhiki@gmail.com',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white,
+              const SizedBox(height: 8),
+              Text(
+                email,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-            SizedBox(height: 24),
-            Expanded(
-              child: ListView(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  TextFormField(
-                    initialValue: 'Nama Pengguna',
-                    decoration: const InputDecoration(
-                      labelText: 'Nama Pengguna',
-                      fillColor: const Color(0xFFB6CAFF),
-                      filled: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: 'Jenis Kelamin',
-                    decoration: const InputDecoration(
-                      labelText: 'Nomor Akun',
-                      fillColor: const Color(0xFFB6CAFF),
-                      filled: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: 'henricdhiki@gmail.com',
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      fillColor: const Color(0xFFB6CAFF),
-                      filled: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: '081866855877',
-                    decoration: const InputDecoration(
-                      labelText: 'Nomor HP',
-                      fillColor: const Color(0xFFB6CAFF),
-                      filled: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  TextFormField(
-                    initialValue: 'Pengguna',
-                    decoration: const InputDecoration(
-                      labelText: 'Role Akun',
-                      fillColor: const Color(0xFFB6CAFF),
-                      filled: true,
-                    ),
-                  ),
-                  SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      // Aksi yang ingin dilakukan saat tombol Logout ditekan
-                      // Misalnya, menghapus data sesi login dan kembali ke halaman login
-                    },
-                    style: ElevatedButton.styleFrom(
-                      primary: Colors.blue,
-                    ),
-                    child: Text(
-                      'Logout',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 8),
+              Text(
+                phone,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
               ),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                "$role | $gender",
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: Colors.white,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 50),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15),
+                    child: Text("Upload Avatar"),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const UpdateProfile()),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.brown,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15),
+                    child: Text("Update Profil"),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15),
+                    child: Text("Ganti Password"),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    _logout();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Padding(
+                    padding: EdgeInsets.all(15),
+                    child: Text("Logout"),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          print('Scan QR Code button pressed');
+          // print('Scan QR Code button pressed');
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.qr_code),
@@ -142,22 +231,22 @@ class Profile extends StatelessWidget {
                 IconButton(
                   icon: const Icon(Icons.home, color: Colors.white),
                   onPressed: () {
-                    Navigator.push(
+                    Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const Dashboard(),
-                      ),
+                          builder: (context) => const Dashboard()),
                     );
                   },
                 ),
                 const SizedBox(
                   width: 20,
                 ),
+                const SizedBox(
+                  width: 20,
+                ),
                 IconButton(
                   icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () {
-                    print('Tombol Profile ditekan');
-                  },
+                  onPressed: () {},
                 ),
               ],
             ),
