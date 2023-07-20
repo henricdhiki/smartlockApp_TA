@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import '../bluetooth/scann.dart';
 import 'daftar_kunci.dart';
 import 'daftar_pintu.dart';
 import 'riwayat_akses.dart';
@@ -308,7 +309,10 @@ class _DashboardState extends State<Dashboard> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // print('Scan QR Code button pressed');
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => const BluetoothScann()),
+          // );
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.qr_code),

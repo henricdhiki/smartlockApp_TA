@@ -189,13 +189,13 @@ class _DaftarPintuState extends State<DaftarPintu> {
                                   ),
                                 ],
                               ),
-                              if (myDoors.connection == "Offline")
+                              if (myDoors.connection == "Online")
                                 ElevatedButton(
                                   onPressed: () {
                                     if (myDoors.status == "Terkunci") {
-                                      _sendRemoteCommand(myDoors.id, "0");
+                                      _sendRemoteCommand(myDoors.id, "open");
                                     } else {
-                                      _sendRemoteCommand(myDoors.id, "1");
+                                      _sendRemoteCommand(myDoors.id, "lock");
                                     }
                                   },
                                   style: ElevatedButton.styleFrom(
