@@ -9,7 +9,8 @@ import 'riwayat_akses.dart';
 import 'profile.dart';
 
 class Dashboard extends StatefulWidget {
-  const Dashboard({super.key});
+  // const Dashboard({super.key});
+  const Dashboard({Key? key}) : super(key: key);
 
   @override
   State<Dashboard> createState() => _DashboardState();
@@ -309,10 +310,10 @@ class _DashboardState extends State<Dashboard> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => const BluetoothScann()),
-          // );
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const BluetoothScann()),
+          );
         },
         backgroundColor: Colors.blue,
         child: const Icon(Icons.qr_code),

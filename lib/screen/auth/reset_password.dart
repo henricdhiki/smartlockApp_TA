@@ -5,7 +5,8 @@ import 'dart:convert';
 
 // class reset password
 class ResetPassword extends StatefulWidget {
-  const ResetPassword({super.key});
+  // const ResetPassword({super.key});
+  const ResetPassword({Key? key}) : super(key: key);
 
   @override
   State<ResetPassword> createState() => _ResetPasswordState();

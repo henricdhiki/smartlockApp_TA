@@ -8,7 +8,8 @@ import 'dashboard.dart';
 import 'update_profile.dart';
 
 class Profile extends StatefulWidget {
-  const Profile({super.key});
+  // const Profile({super.key});
+  const Profile({Key? key}) : super(key: key);
 
   @override
   State<Profile> createState() => _ProfileState();

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'screen/auth/halaman_login.dart';
 import 'screen/dashboard/dashboard.dart';
+import 'screen/bluetooth/scann.dart';
 
 // bagian ini akan dijalankan pertama kali saat aplikasi dibuka
 void main() {
@@ -11,7 +12,8 @@ void main() {
 
 // class applikasi
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  // const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class MyApp extends StatelessWidget {
 
 // class cek login
 class CheckAuth extends StatefulWidget {
-  const CheckAuth({super.key});
+  const CheckAuth({Key? key}) : super(key: key);
 
   @override
   State<CheckAuth> createState() => _CheckAuthState();

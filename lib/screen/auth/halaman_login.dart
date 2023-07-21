@@ -11,7 +11,8 @@ import '../dashboard/dashboard.dart';
 
 // class halaman login
 class HalamanLogin extends StatefulWidget {
-  const HalamanLogin({super.key});
+  // const HalamanLogin({super.key});
+  const HalamanLogin({Key? key}) : super(key: key);
 
   @override
   State<HalamanLogin> createState() => _HalamanLoginState();
@@ -66,7 +67,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const Dashboard()),
+          MaterialPageRoute(builder: (context) => Dashboard()),
         );
       }
 
@@ -91,7 +92,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => const KodeOtp(),
+            builder: (context) => KodeOtp(),
           ),
         );
       }

@@ -1,78 +1,59 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_blue/flutter_blue.dart';
+import 'package:flutter/material.dart';
+import 'door_command.dart';
 
-// class BluetoothScann extends StatefulWidget {
-//   const BluetoothScann({super.key});
+class BluetoothScann extends StatefulWidget {
+  // const BluetoothScann({super.key});
+  const BluetoothScann({Key? key}) : super(key: key);
 
-//   @override
-//   State<BluetoothScann> createState() => _BluetoothScannState();
-// }
+  @override
+  State<BluetoothScann> createState() => _BluetoothScannState();
+}
 
-// class _BluetoothScannState extends State<BluetoothScann> {
-//   FlutterBlue _flutterBlue = FlutterBlue.instance;
-//   List<ScanResult> _devices = [];
-//   bool _isScanning = false;
+class _BluetoothScannState extends State<BluetoothScann> {
+  final TextEditingController _idPintu = TextEditingController();
 
-//   @override
-//   void initState() {
-//     super.initState();
-//   }
-
-//   Future<void> _startScan() async {
-//     setState(() {
-//       _isScanning = true;
-//       _devices.clear();
-//     });
-
-//     _flutterBlue.scanResults.listen((results) {
-//       setState(() {
-//         _devices = results;
-//       });
-//     });
-
-//     _flutterBlue.startScan();
-//     await Future.delayed(Duration(seconds: 10)); // Scan for 10 seconds
-//     _stopScan();
-//   }
-
-//   void _stopScan() {
-//     _flutterBlue.stopScan();
-//     setState(() {
-//       _isScanning = false;
-//     });
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Bluetooth Scan'),
-//       ),
-//       body: Column(
-//         children: [
-//           ElevatedButton(
-//             onPressed: _isScanning ? null : _startScan,
-//             child: Text('Mulai Scan'),
-//           ),
-//           ElevatedButton(
-//             onPressed: _isScanning ? _stopScan : null,
-//             child: Text('Hentikan Scan'),
-//           ),
-//           Expanded(
-//             child: ListView.builder(
-//               itemCount: _devices.length,
-//               itemBuilder: (context, index) {
-//                 return ListTile(
-//                   title: Text(_devices[index].device.name.isNotEmpty
-//                       ? _devices[index].device.name
-//                       : 'Unknown'),
-//                   subtitle: Text(_devices[index].device.id.toString()),
-//                 );
-//               },
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Bluetooth Scan'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              TextFormField(
+                keyboardType: TextInputType.text,
+                controller: _idPintu,
+                decoration: const InputDecoration(
+                  labelText: 'Id Pintu',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 15),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const DoorCommand(
+                          name: "Lab Tenaga Listrik",
+                          id: "74ee1bd0-8a61-40c1-821f-f095acbc9fad",
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text("Periksa"),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

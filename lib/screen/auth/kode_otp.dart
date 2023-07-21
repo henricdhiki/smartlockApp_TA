@@ -6,7 +6,8 @@ import 'dart:convert';
 import '../dashboard/dashboard.dart';
 
 class KodeOtp extends StatefulWidget {
-  const KodeOtp({super.key});
+  // const KodeOtp({super.key});
+  const KodeOtp({Key? key}) : super(key: key);
 
   @override
   State<KodeOtp> createState() => _KodeOtpState();

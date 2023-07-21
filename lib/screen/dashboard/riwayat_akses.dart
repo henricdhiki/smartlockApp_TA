@@ -29,7 +29,8 @@ class HistoryAccessCard {
 }
 
 class RiwayatAkses extends StatefulWidget {
-  const RiwayatAkses({super.key});
+  // const RiwayatAkses({super.key});
+  const RiwayatAkses({Key? key}) : super(key: key);
 
   @override
   State<RiwayatAkses> createState() => _RiwayatAksesState();
@@ -44,7 +45,7 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
   }
 
   String formatTimestamp(String timestamp) {
-    DateTime dateTime = DateTime.parse(timestamp);
+    DateTime dateTime = DateTime.parse(timestamp).toLocal();
     String formattedDate = DateFormat('dd-MM-yyyy HH:mm:ss').format(dateTime);
     return formattedDate;
   }

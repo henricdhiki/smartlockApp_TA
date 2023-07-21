@@ -46,7 +46,8 @@ class DoorCard {
 }
 
 class DaftarPintu extends StatefulWidget {
-  const DaftarPintu({super.key});
+  // const DaftarPintu({super.key});
+  const DaftarPintu({Key? key}) : super(key: key);
 
   @override
   State<DaftarPintu> createState() => _DaftarPintuState();

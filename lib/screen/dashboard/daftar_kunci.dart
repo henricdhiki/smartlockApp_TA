@@ -33,7 +33,8 @@ class AccessCard {
 }
 
 class DaftarKunci extends StatefulWidget {
-  const DaftarKunci({super.key});
+  // const DaftarKunci({super.key});
+  const DaftarKunci({Key? key}) : super(key: key);
 
   @override
   State<DaftarKunci> createState() => _DaftarKunciState();

@@ -1,5 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.kunci_pintu_iot">
+    package="com.example.kunci_pintu_iot"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-sdk tools:overrideLibrary="io.github.edufolly.flutterbluetoothserial"/>
    <application
         android:label="kunci_pintu_iot"
         android:name="${applicationName}"
