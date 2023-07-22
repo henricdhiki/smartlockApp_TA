@@ -4,7 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../auth/halaman_login.dart';
-import 'dashboard.dart';
+import 'update_password.dart';
 import 'update_profile.dart';
 
 class Profile extends StatefulWidget {
@@ -41,6 +41,17 @@ class _ProfileState extends State<Profile> {
         role = user['role'];
         phone = user['phone'];
       });
+    }
+  }
+
+  void _goToUpdateScreen() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const UpdateProfile()),
+    );
+
+    if (result != null) {
+      _loadUserData();
     }
   }
 
@@ -87,6 +98,9 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF2C0089),
+      appBar: AppBar(
+        title: const Text('Profil Anda'),
+      ),
       body: Container(
         width: double.infinity,
         padding: const EdgeInsets.all(20),
@@ -95,7 +109,7 @@ class _ProfileState extends State<Profile> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const SizedBox(height: 30),
+              const SizedBox(height: 15),
               CircleAvatar(
                 radius: 77,
                 backgroundImage: _imageProvider,
@@ -158,11 +172,7 @@ class _ProfileState extends State<Profile> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const UpdateProfile()),
-                    );
+                    _goToUpdateScreen();
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.brown,
@@ -178,7 +188,14 @@ class _ProfileState extends State<Profile> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const UpdatePassword(),
+                      ),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.blue,
                     foregroundColor: Colors.white,
@@ -206,51 +223,7 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
             ],
-          ),
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // print('Scan QR Code button pressed');
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.qr_code),
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-        child: BottomAppBar(
-          color: const Color(0xFF358BE7),
-          shape: const CircularNotchedRectangle(),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.home, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Dashboard()),
-                    );
-                  },
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () {},
-                ),
-              ],
-            ),
           ),
         ),
       ),

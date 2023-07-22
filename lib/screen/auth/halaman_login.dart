@@ -67,7 +67,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => Dashboard()),
+          MaterialPageRoute(builder: (context) => const Dashboard()),
         );
       }
 
@@ -92,7 +92,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => KodeOtp(),
+            builder: (context) => const KodeOtp(),
           ),
         );
       }
@@ -120,7 +120,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('background.png'),
+            image: AssetImage('assets/background.png'),
             fit: BoxFit.cover,
           ),
         ),
@@ -152,7 +152,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
               ),
               const Text('Sistem Kunci Pintu Gedung Berbasi IoT'),
               const SizedBox(
-                height: 40,
+                height: 20,
               ),
               Card(
                 child: Padding(
@@ -212,9 +212,6 @@ class _HalamanLoginState extends State<HalamanLogin> {
                             return null;
                           },
                         ),
-                        const SizedBox(
-                          height: 10,
-                        ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -233,7 +230,7 @@ class _HalamanLoginState extends State<HalamanLogin> {
                           ],
                         ),
                         const SizedBox(
-                          height: 30,
+                          height: 5,
                         ),
                         SizedBox(
                           height: 35,
@@ -255,9 +252,6 @@ class _HalamanLoginState extends State<HalamanLogin> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(
-                height: 200,
               ),
             ],
           ),

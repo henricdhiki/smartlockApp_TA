@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:kunci_pintu_iot/network/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../auth/halaman_login.dart';
-import 'dashboard.dart';
-import 'profile.dart';
-// import 'dashboard.dart';
+import '../event_bus.dart';
+import '../event.dart';
 
 class DoorCard {
   final String id;
@@ -55,28 +55,48 @@ class DaftarPintu extends StatefulWidget {
 
 class _DaftarPintuState extends State<DaftarPintu> {
   List<DoorCard> _doorCardList = [];
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _initListener();
     _fetchDoorData();
   }
 
-  Future<void> _sendRemoteCommand(String id, String locking) async {
-    final response = await NetworkAPI()
-        .postAPI('/remote-access', true, {'door_id': id, 'locking': locking});
-    var dataRespon = json.decode(response.body);
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
-    // jika login sudah kadaluarsa
-    if (dataRespon['message'] != null) {
-      if (context.mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HalamanLogin()),
-        );
-      }
-      return;
-    }
+  void _initListener() {
+    eventBus.on<DoorUpdate>().listen((event) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text(
+          'update pintu berhasil',
+          textAlign: TextAlign.center,
+        ),
+        duration: Duration(seconds: 2),
+      ));
+      _fetchDoorData();
+    });
+
+    eventBus.on<DoorRemoved>().listen((event) {
+      _fetchDoorData();
+    });
+
+    eventBus.on<DoorRemoved>().listen((event) {
+      _fetchDoorData();
+    });
+  }
+
+  Future<void> _sendRemoteCommand(String id, String locking) async {
+    final response = await NetworkAPI().postAPI('/remote-access', true, {
+      'door_id': id,
+      'locking': locking,
+    });
+
+    var dataRespon = json.decode(response.body);
 
     if (dataRespon['status'] == 'success') {
       if (context.mounted) {
@@ -93,31 +113,31 @@ class _DaftarPintuState extends State<DaftarPintu> {
 
   Future<void> _fetchDoorData() async {
     final response = await NetworkAPI().getAPI('/get-door', true);
-
     var dataRespon = json.decode(response.body);
 
-    // jika login sudah kadaluarsa
     if (dataRespon['message'] != null) {
+      SharedPreferences localStorage = await SharedPreferences.getInstance();
+      localStorage.setBool('isLogin', false);
+
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HalamanLogin()),
         );
       }
-      return;
     }
 
     if (dataRespon['status'] == 'success') {
-      final List<dynamic> jsonData =
-          dataRespon['data']; // Access the "data" key
+      final List<dynamic> jsonData = dataRespon['data'];
       List<DoorCard> doorCard =
           jsonData.map((data) => DoorCard.fromJson(data)).toList();
 
       setState(() {
         _doorCardList = doorCard;
+        isLoading = false;
       });
     } else {
-      throw Exception('Failed to load access data');
+      throw Exception('gagal load data');
     }
   }
 
@@ -133,8 +153,25 @@ class _DaftarPintuState extends State<DaftarPintu> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ListView.builder(
+            if (isLoading == true)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFB6CAFF),
+                ),
+                child: Row(
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 20),
+                    Text("Mengambil Data ...")
+                  ],
+                ),
+              ),
+            if (isLoading == false)
+              Expanded(
+                child: ListView.builder(
                   itemCount: _doorCardList.length,
                   itemBuilder: (context, index) {
                     final myDoors = _doorCardList[index];
@@ -220,60 +257,10 @@ class _DaftarPintuState extends State<DaftarPintu> {
                         ),
                       ],
                     );
-                  }),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
+                  },
+                ),
+              ),
           ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // print('Scan QR Code button pressed');
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.qr_code),
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-        child: BottomAppBar(
-          color: const Color(0xFF358BE7),
-          shape: const CircularNotchedRectangle(),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.home, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Dashboard()),
-                    );
-                  },
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Profile()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

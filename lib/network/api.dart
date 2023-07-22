@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 // class api (untuk membantu menyederhanakan kode program)
 class NetworkAPI {
@@ -7,9 +8,16 @@ class NetworkAPI {
   final _url = 'https://smartdoorlock.my.id/api';
 
   // fungsi untuk mendapatkan token user pada shared_preferences
-  _getToken() async {
+  getToken() async {
     SharedPreferences storage = await SharedPreferences.getInstance();
     return storage.getString('token');
+  }
+
+  getUserId() async {
+    SharedPreferences storage = await SharedPreferences.getInstance();
+    var userData = storage.getString('userData');
+    var user = json.decode(userData!);
+    return user['id'];
   }
 
   // fungsi untuk melakukan request get
@@ -20,7 +28,7 @@ class NetworkAPI {
     if (isTokenable) {
       return await http.get(
         Uri.parse(fullUrl),
-        headers: _setTokenableHeader(await _getToken()),
+        headers: _setTokenableHeader(await getToken()),
       );
     }
 
@@ -39,7 +47,7 @@ class NetworkAPI {
     if (isTokenable) {
       return await http.post(
         Uri.parse(fullUrl),
-        headers: _setTokenableHeader(await _getToken()),
+        headers: _setTokenableHeader(await getToken()),
         body: data,
       );
     }
@@ -49,6 +57,19 @@ class NetworkAPI {
       Uri.parse(fullUrl),
       headers: _setHeader(),
       body: data,
+    );
+  }
+
+  getSignature(socketId, officeId) async {
+    return await http.post(
+      Uri.parse("https://smartdoorlock.my.id/api/get-signature"),
+      headers: _setTokenableHeader(await getToken()),
+      body: {
+        "socket_id": socketId,
+        "office_id": officeId,
+        "channel_data":
+            "{\"user_id\":\"${await NetworkAPI().getUserId()}\",\"user_info\":true}",
+      },
     );
   }
 

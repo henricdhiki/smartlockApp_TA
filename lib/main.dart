@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'screen/notification.dart';
+
+import 'screen/event_bus.dart';
+import 'screen/event.dart';
 
 import 'screen/auth/halaman_login.dart';
 import 'screen/dashboard/dashboard.dart';
-import 'screen/bluetooth/scann.dart';
 
-// bagian ini akan dijalankan pertama kali saat aplikasi dibuka
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  NotificationService().initNotification();
+  eventBus.on<DoorAlert>().listen((event) {
+    NotificationService().showNotification(
+      title: 'Peringatan Pintu',
+      body: event.message,
+    );
+  });
+
   runApp(const MyApp());
 }
 

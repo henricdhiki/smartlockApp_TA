@@ -1,63 +1,36 @@
-import 'package:flutter/material.dart';
-import 'package:kunci_pintu_iot/network/api.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-import '../../helper/regex.dart';
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../network/api.dart';
 import '../auth/halaman_login.dart';
 
-class UpdateProfile extends StatefulWidget {
-  // const UpdateProfile({super.key});
-  const UpdateProfile({Key? key}) : super(key: key);
+class UpdatePassword extends StatefulWidget {
+  // const UpdatePassword({super.key});
+  const UpdatePassword({Key? key}) : super(key: key);
 
   @override
-  State<UpdateProfile> createState() => _UpdateProfileState();
+  State<UpdatePassword> createState() => _UpdatePasswordState();
 }
 
-class _UpdateProfileState extends State<UpdateProfile> {
-  final TextEditingController _namaController = TextEditingController();
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _nomorHpController = TextEditingController();
-
-  List<String> options = ['laki-laki', 'perempuan'];
-  String selectedValue = 'perempuan';
+class _UpdatePasswordState extends State<UpdatePassword> {
+  final TextEditingController _passwordNowController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _passwordConfirmationController =
+      TextEditingController();
 
   bool isLoading = false;
-
   final _formKey = GlobalKey<FormState>();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUserData();
-  }
-
-  Future<void> _loadUserData() async {
-    SharedPreferences localStorage = await SharedPreferences.getInstance();
-    var userData = localStorage.getString('userData');
-
-    if (userData != null && userData.isNotEmpty) {
-      var user = json.decode(userData);
-
-      setState(() {
-        _namaController.text = user['name'];
-        _emailController.text = user['email'];
-        selectedValue = user['gender'];
-        _nomorHpController.text = user['phone'];
-      });
-    }
-  }
-
-  Future<void> _updateProfile() async {
+  Future<void> _updatePassword() async {
     setState(() {
       isLoading = true;
     });
-
-    var respon = await NetworkAPI().postAPI('/update-profile', true, {
-      'name': _namaController.text,
-      'email': _emailController.text,
-      'gender': selectedValue,
-      'phone': _nomorHpController.text,
+    var respon = await NetworkAPI().postAPI('/change-password', true, {
+      'password_now': _passwordNowController.text,
+      'password': _passwordController.text,
+      'password_confirmation': _passwordConfirmationController.text,
     });
 
     var dataRespon = json.decode(respon.body);
@@ -75,13 +48,11 @@ class _UpdateProfileState extends State<UpdateProfile> {
     }
 
     if (dataRespon['status'] == 'success') {
-      SharedPreferences localStorage = await SharedPreferences.getInstance();
-      localStorage.setString('userData', json.encode(dataRespon['data']));
       if (context.mounted) {
-        Navigator.pop(context, 'updated');
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text(
-            'profil berhasil diperbarui',
+            'password berhasil diperbarui',
             textAlign: TextAlign.center,
           ),
           duration: Duration(seconds: 2),
@@ -121,78 +92,48 @@ class _UpdateProfileState extends State<UpdateProfile> {
                     child: Column(
                       children: [
                         TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'Email',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value!.isEmpty) {
-                              return 'Email tidak boleh kosong';
-                            }
-                            if (RegexHelper().validatedEmail(value) == false) {
-                              return 'format email tidak sesuai';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 15),
-                        TextFormField(
-                          controller: _namaController,
+                          controller: _passwordNowController,
                           keyboardType: TextInputType.text,
+                          obscureText: true,
                           decoration: const InputDecoration(
-                            labelText: 'Nama',
+                            labelText: 'Password Sekarang',
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value!.isEmpty) {
-                              return 'Nama tidak boleh kosong';
+                              return 'Password tidak boleh kosong';
                             }
                             return null;
                           },
                         ),
                         const SizedBox(height: 15),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 1,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            border: Border.all(color: Colors.grey),
-                          ),
-                          child: SizedBox(
-                            width: double.infinity,
-                            child: DropdownButtonHideUnderline(
-                              child: DropdownButton<String>(
-                                value: selectedValue,
-                                onChanged: (newValue) {
-                                  setState(() {
-                                    selectedValue = newValue!;
-                                  });
-                                },
-                                items: options.map((value) {
-                                  return DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Text(value),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
                         TextFormField(
-                          controller: _nomorHpController,
-                          keyboardType: TextInputType.number,
+                          controller: _passwordController,
+                          keyboardType: TextInputType.text,
+                          obscureText: true,
                           decoration: const InputDecoration(
-                            labelText: 'Nomor HP',
+                            labelText: 'Password Baru',
                             border: OutlineInputBorder(),
                           ),
                           validator: (value) {
                             if (value!.isEmpty) {
-                              return 'Nomor HP tidak boleh kosong';
+                              return 'Password tidak boleh kosong';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                        TextFormField(
+                          controller: _passwordConfirmationController,
+                          keyboardType: TextInputType.text,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Konfirmasi Password',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (value) {
+                            if (value!.isEmpty) {
+                              return 'Konfirmasi tidak boleh kosong';
                             }
                             return null;
                           },
@@ -207,7 +148,7 @@ class _UpdateProfileState extends State<UpdateProfile> {
                                 : () {
                                     if (_formKey.currentState != null &&
                                         _formKey.currentState!.validate()) {
-                                      _updateProfile();
+                                      _updatePassword();
                                     }
                                   },
                             child: Text(

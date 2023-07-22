@@ -3,10 +3,9 @@ import 'package:kunci_pintu_iot/network/api.dart';
 import 'package:intl/intl.dart';
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../auth/halaman_login.dart';
-import 'dashboard.dart';
-import 'profile.dart';
-// import 'dashboard.dart';
 
 class HistoryAccessCard {
   final String name;
@@ -38,6 +37,8 @@ class RiwayatAkses extends StatefulWidget {
 
 class _RiwayatAksesState extends State<RiwayatAkses> {
   List<HistoryAccessCard> _historyAccessCardList = [];
+  bool isLoading = true;
+
   @override
   void initState() {
     super.initState();
@@ -55,15 +56,16 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
 
     var dataRespon = json.decode(response.body);
 
-    // jika login sudah kadaluarsa
     if (dataRespon['message'] != null) {
+      SharedPreferences localStorage = await SharedPreferences.getInstance();
+      localStorage.setBool('isLogin', false);
+
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HalamanLogin()),
         );
       }
-      return;
     }
 
     if (dataRespon['status'] == 'success') {
@@ -71,9 +73,9 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
           dataRespon['data']; // Access the "data" key
       List<HistoryAccessCard> historyAccessCard =
           jsonData.map((data) => HistoryAccessCard.fromJson(data)).toList();
-
       setState(() {
         _historyAccessCardList = historyAccessCard;
+        isLoading = false;
       });
     } else if (dataRespon['status'] == 'un') {
       throw Exception('Failed to load access data');
@@ -92,127 +94,88 @@ class _RiwayatAksesState extends State<RiwayatAkses> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ListView.builder(
-                  itemCount: _historyAccessCardList.length,
-                  itemBuilder: (context, index) {
-                    final myHistoryAccessCard = _historyAccessCardList[index];
-                    return Column(
-                      children: [
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(15),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
-                            color: const Color(0xFFB6CAFF),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Icon(
-                                Icons.history_outlined,
-                                size: 30,
-                                color: Colors.black,
-                              ),
-                              const SizedBox(
-                                width: 18,
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    myHistoryAccessCard.name,
-                                    style: const TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
+            if (isLoading == true)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFB6CAFF),
+                ),
+                child: Row(
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 20),
+                    Text("Mengambil Data ...")
+                  ],
+                ),
+              ),
+            if (isLoading == false)
+              Expanded(
+                child: ListView.builder(
+                    itemCount: _historyAccessCardList.length,
+                    itemBuilder: (context, index) {
+                      final myHistoryAccessCard = _historyAccessCardList[index];
+                      return Column(
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(15),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8),
+                              color: const Color(0xFFB6CAFF),
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.history_outlined,
+                                  size: 30,
+                                  color: Colors.black,
+                                ),
+                                const SizedBox(
+                                  width: 18,
+                                ),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      myHistoryAccessCard.name,
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    formatTimestamp(myHistoryAccessCard.time),
-                                    style: const TextStyle(
-                                        color: Colors.black, fontSize: 12),
-                                  ),
-                                  const SizedBox(
-                                    height: 5,
-                                  ),
-                                  Text(
-                                    myHistoryAccessCard.status,
-                                    style: const TextStyle(
-                                        color: Colors.black, fontSize: 12),
-                                  ),
-                                ],
-                              ),
-                            ],
+                                    const SizedBox(
+                                      height: 5,
+                                    ),
+                                    Text(
+                                      formatTimestamp(myHistoryAccessCard.time),
+                                      style: const TextStyle(
+                                          color: Colors.black, fontSize: 12),
+                                    ),
+                                    const SizedBox(
+                                      height: 5,
+                                    ),
+                                    Text(
+                                      myHistoryAccessCard.status,
+                                      style: const TextStyle(
+                                          color: Colors.black, fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
                           ),
-                        ),
-                        const SizedBox(
-                          height: 15,
-                        ),
-                      ],
-                    );
-                  }),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
+                          const SizedBox(
+                            height: 15,
+                          ),
+                        ],
+                      );
+                    }),
+              ),
           ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // print('Scan QR Code button pressed');
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.qr_code),
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-        child: BottomAppBar(
-          color: const Color(0xFF358BE7),
-          shape: const CircularNotchedRectangle(),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.home, color: Colors.white),
-                  onPressed: () {
-                    // Navigator.pushReplacement(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => const Dashboard()),
-                    // );
-                    Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                            builder: (context) => const Dashboard()),
-                        (route) => false);
-                  },
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Profile()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:kunci_pintu_iot/network/api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../auth/halaman_login.dart';
-import 'dashboard.dart';
-import 'profile.dart';
-// import 'dashboard.dart';
 
 class AccessCard {
   final String name;
@@ -42,6 +40,7 @@ class DaftarKunci extends StatefulWidget {
 
 class _DaftarKunciState extends State<DaftarKunci> {
   List<AccessCard> _accessCardList = [];
+  bool isLoading = true;
 
   @override
   void initState() {
@@ -54,15 +53,16 @@ class _DaftarKunciState extends State<DaftarKunci> {
 
     var dataRespon = json.decode(response.body);
 
-    // jika login sudah kadaluarsa
     if (dataRespon['message'] != null) {
+      SharedPreferences localStorage = await SharedPreferences.getInstance();
+      localStorage.setBool('isLogin', false);
+
       if (context.mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HalamanLogin()),
         );
       }
-      return;
     }
 
     if (dataRespon['status'] == 'success') {
@@ -70,9 +70,9 @@ class _DaftarKunciState extends State<DaftarKunci> {
           dataRespon['data']; // Access the "data" key
       List<AccessCard> accessCard =
           jsonData.map((data) => AccessCard.fromJson(data)).toList();
-
       setState(() {
         _accessCardList = accessCard;
+        isLoading = false;
       });
     } else {
       throw Exception('failed to load access data');
@@ -91,8 +91,25 @@ class _DaftarKunciState extends State<DaftarKunci> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: ListView.builder(
+            if (isLoading == true)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: const Color(0xFFB6CAFF),
+                ),
+                child: Row(
+                  children: const [
+                    CircularProgressIndicator(),
+                    SizedBox(width: 20),
+                    Text("Mengambil Data ...")
+                  ],
+                ),
+              ),
+            if (isLoading == false)
+              Expanded(
+                child: ListView.builder(
                   itemCount: _accessCardList.length,
                   itemBuilder: (context, index) {
                     final myAccessCard = _accessCardList[index];
@@ -158,60 +175,10 @@ class _DaftarKunciState extends State<DaftarKunci> {
                         ),
                       ],
                     );
-                  }),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
+                  },
+                ),
+              ),
           ],
-        ),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // print('Scan QR Code button pressed');
-        },
-        backgroundColor: Colors.blue,
-        child: const Icon(Icons.qr_code),
-      ),
-      bottomNavigationBar: ClipRRect(
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(5)),
-        child: BottomAppBar(
-          color: const Color(0xFF358BE7),
-          shape: const CircularNotchedRectangle(),
-          child: SizedBox(
-            height: 50,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.home, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                          builder: (context) => const Dashboard()),
-                    );
-                  },
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                const SizedBox(
-                  width: 20,
-                ),
-                IconButton(
-                  icon: const Icon(Icons.person, color: Colors.white),
-                  onPressed: () {
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const Profile()),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

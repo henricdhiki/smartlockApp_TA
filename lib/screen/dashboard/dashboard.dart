@@ -2,6 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
+import 'package:kunci_pintu_iot/network/api.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
+import 'dart:async';
+
+import '../event_bus.dart';
+import '../event.dart';
 import '../bluetooth/scann.dart';
 import 'daftar_kunci.dart';
 import 'daftar_pintu.dart';
@@ -19,10 +25,119 @@ class Dashboard extends StatefulWidget {
 class _DashboardState extends State<Dashboard> {
   String _userRole = '';
 
+  String officeId = '';
+  String socketId = '';
+
+  WebSocketChannel? socket;
+  bool socketIsConnected = false;
+
+  Timer? pingTimer;
+
   @override
   void initState() {
     super.initState();
     getUserRole();
+    _startPingTimer();
+  }
+
+  void _startPingTimer() {
+    const Duration pingInterval = Duration(seconds: 30);
+
+    pingTimer = Timer.periodic(pingInterval, (timer) {
+      if (socketIsConnected) {
+        socket?.sink.add("{\"event\":\"pusher:ping\",\"data\":{}}");
+      }
+    });
+  }
+
+  Future<void> _connectWebsocket() async {
+    socket = WebSocketChannel.connect(
+      Uri.parse('wss://door.smartdoorlock.my.id/app/aNmB0bkbrE1PS6K07nrt'),
+    );
+
+    socket?.stream.listen((message) {
+      handledMessage(message);
+    }, onDone: () {
+      setState(() {
+        socketIsConnected = false;
+      });
+    }, onError: (error) {
+      setState(() {
+        socketIsConnected = false;
+      });
+    }, cancelOnError: true);
+  }
+
+  void handledMessage(String message) {
+    var decodedMessage = json.decode(message);
+
+    if (decodedMessage['event'] == 'pusher:connection_established') {
+      var data = json.decode(decodedMessage['data']);
+      setState(() {
+        socketIsConnected = true;
+        socketId = data['socket_id'];
+      });
+      _requestSignature();
+    } else if (decodedMessage['event'] ==
+        'pusher_internal:subscription_succeeded') {
+      // if (context.mounted) {
+      //   ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+      //     content: Text(
+      //       'koneksi websocket berhasil',
+      //       textAlign: TextAlign.center,
+      //     ),
+      //     duration: Duration(seconds: 2),
+      //   ));
+      // }
+    } else if (decodedMessage['event'] == 'door-status') {
+      eventBus.fire(DoorUpdate("updated"));
+    } else if (decodedMessage['event'] == 'door-alert') {
+      eventBus.fire(DoorAlert(decodedMessage['data']));
+    } else if (decodedMessage['event'] == 'pusher_internal:member_removed') {
+      eventBus.fire(DoorRemoved('updated'));
+    } else if (decodedMessage['event'] == 'pusher_internal:member_added') {
+      eventBus.fire(DoorAdded('updated'));
+    }
+  }
+
+  Future<void> _requestSignature() async {
+    var doors = await NetworkAPI().getAPI('/get-door', true);
+    var doorsBody = json.decode(doors.body);
+
+    if (doorsBody['status'] == 'success') {
+      officeId = doorsBody['office'];
+    }
+
+    var responData = await NetworkAPI().getSignature(
+      socketId,
+      officeId,
+    );
+
+    var responBody = json.decode(responData.body);
+
+    if (responBody['status'] == 'success') {
+      String signatureData = responBody['data']['signature'];
+
+      socket?.sink.add(json.encode({
+        'event': 'pusher:subscribe',
+        'data': {
+          'auth': 'aNmB0bkbrE1PS6K07nrt:$signatureData',
+          'channel_data':
+              '{"user_id":"${await NetworkAPI().getUserId()}","user_info":true}',
+          'channel': 'presence-office.$officeId',
+        }
+      }));
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+            'gagal mendapatkan signature',
+            textAlign: TextAlign.center,
+          ),
+          duration: Duration(seconds: 2),
+        ));
+      }
+    }
   }
 
   Future<void> getUserRole() async {
@@ -32,6 +147,10 @@ class _DashboardState extends State<Dashboard> {
     setState(() {
       _userRole = userData['role'];
     });
+
+    if (socketIsConnected == false) {
+      _connectWebsocket();
+    }
   }
 
   @override
@@ -54,16 +173,16 @@ class _DashboardState extends State<Dashboard> {
               height: 15,
             ),
             SizedBox(
-              height: 150,
+              height: 120,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
                   Container(
-                    width: 300,
+                    width: 260,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       image: const DecorationImage(
-                        image: AssetImage('timnas.png'),
+                        image: AssetImage('assets/timnas.png'),
                         fit: BoxFit.fill,
                       ),
                     ),
@@ -72,11 +191,11 @@ class _DashboardState extends State<Dashboard> {
                     width: 10,
                   ),
                   Container(
-                    width: 300,
+                    width: 260,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       image: const DecorationImage(
-                        image: AssetImage('timnas.png'),
+                        image: AssetImage('assets/timnas.png'),
                         fit: BoxFit.fill,
                       ),
                     ),
@@ -85,11 +204,11 @@ class _DashboardState extends State<Dashboard> {
                     width: 10,
                   ),
                   Container(
-                    width: 300,
+                    width: 260,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       image: const DecorationImage(
-                        image: AssetImage('timnas.png'),
+                        image: AssetImage('assets/timnas.png'),
                         fit: BoxFit.fill,
                       ),
                     ),
@@ -145,7 +264,7 @@ class _DashboardState extends State<Dashboard> {
                     ],
                   ),
                   onTap: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const DaftarPintu()),
@@ -195,7 +314,7 @@ class _DashboardState extends State<Dashboard> {
                     ],
                   ),
                   onTap: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(
                           builder: (context) => const DaftarKunci()),
@@ -244,7 +363,7 @@ class _DashboardState extends State<Dashboard> {
                   ],
                 ),
                 onTap: () {
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                         builder: (context) => const RiwayatAkses()),
@@ -293,7 +412,7 @@ class _DashboardState extends State<Dashboard> {
                     ],
                   ),
                   onTap: () {
-                    // Navigator.pushReplacement(
+                    // Navigator.push(
                     //   context,
                     //   MaterialPageRoute(
                     //       builder: (context) => const RiwayatAkses()),
@@ -312,7 +431,11 @@ class _DashboardState extends State<Dashboard> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const BluetoothScann()),
+            MaterialPageRoute(
+              builder: (context) => BluetoothScann(
+                function: 'door-unlock',
+              ),
+            ),
           );
         },
         backgroundColor: Colors.blue,
@@ -341,7 +464,7 @@ class _DashboardState extends State<Dashboard> {
                 IconButton(
                   icon: const Icon(Icons.person, color: Colors.white),
                   onPressed: () {
-                    Navigator.pushReplacement(
+                    Navigator.push(
                       context,
                       MaterialPageRoute(builder: (context) => const Profile()),
                     );

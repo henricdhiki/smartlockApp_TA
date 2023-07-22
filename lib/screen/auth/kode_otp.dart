@@ -98,7 +98,7 @@ class _KodeOtpState extends State<KodeOtp> {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('background.png'),
+            image: AssetImage('assets/background.png'),
             fit: BoxFit.cover,
           ),
         ),
@@ -179,9 +179,6 @@ class _KodeOtpState extends State<KodeOtp> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(
-                height: 200,
               ),
             ],
           ),
