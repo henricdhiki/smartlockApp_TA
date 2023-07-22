@@ -1,6 +1,11 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 import 'package:kunci_pintu_iot/network/api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import 'dart:convert';
 
 import '../auth/halaman_login.dart';
@@ -17,6 +22,9 @@ class Profile extends StatefulWidget {
 
 class _ProfileState extends State<Profile> {
   ImageProvider? _imageProvider;
+  File? _image;
+
+  bool isLoading = false;
 
   String name = '', email = '', gender = '', phone = '', role = '';
 
@@ -85,13 +93,90 @@ class _ProfileState extends State<Profile> {
   Future<void> _loadImage() async {
     try {
       final response = await NetworkAPI().getAPI('/avatar', true);
-
       setState(() {
         _imageProvider = MemoryImage(response.bodyBytes);
       });
     } catch (e) {
       throw Exception("failed to load avatar image : $e");
     }
+  }
+
+  Future<void> _pickImage(ImageSource source) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: source);
+
+    setState(() {
+      if (pickedImage != null) {
+        _image = File(pickedImage.path);
+        _uploadImageToServer();
+      }
+    });
+  }
+
+  Future<void> _uploadImageToServer() async {
+    if (_image == null) {
+      // Tidak ada gambar yang dipilih
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    SharedPreferences localStorage = await SharedPreferences.getInstance();
+    var token = localStorage.getString('token');
+
+    var url = Uri.parse(
+        'https://smartdoorlock.my.id/api/update-avatar'); // Ganti URL sesuai dengan backend Anda
+    var request = http.MultipartRequest('POST', url);
+    request.headers['Authorization'] = 'Bearer $token';
+
+    // Tambahkan file gambar ke request
+    var imageFile = await http.MultipartFile.fromPath('avatar', _image!.path);
+    request.files.add(imageFile);
+
+    // Kirim request ke server
+    var response = await request.send();
+
+    if (response.statusCode == 200) {
+      var responseData = await response.stream.bytesToString();
+      var jsonData = json.decode(responseData);
+      if (jsonData['status'] == 'success') {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+              'avatar berhasil diperbarui',
+              textAlign: TextAlign.center,
+            ),
+            duration: Duration(seconds: 2),
+          ));
+          _loadImage();
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text(
+              'format gambar tidak sesuai',
+              textAlign: TextAlign.center,
+            ),
+            duration: Duration(seconds: 2),
+          ));
+        }
+      }
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text(
+            'terjadi kesalahan',
+            textAlign: TextAlign.center,
+          ),
+          duration: Duration(seconds: 2),
+        ));
+      }
+    }
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -156,14 +241,19 @@ class _ProfileState extends State<Profile> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
+                  onPressed: isLoading == true
+                      ? null
+                      : () {
+                          _pickImage(ImageSource.gallery);
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
                     foregroundColor: Colors.white,
                   ),
-                  child: const Padding(
-                    padding: EdgeInsets.all(15),
-                    child: Text("Upload Avatar"),
+                  child: Padding(
+                    padding: const EdgeInsets.all(15),
+                    child: Text(
+                        isLoading == true ? "Loading ..." : "Upload Avatar"),
                   ),
                 ),
               ),
