@@ -41,6 +41,7 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _stopScan();
     super.dispose();
   }
 

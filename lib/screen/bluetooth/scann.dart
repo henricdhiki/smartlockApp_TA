@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bluetooth_serial/flutter_bluetooth_serial.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 
 import 'door_command.dart';
+import 'door_config.dart';
+import 'invalid_qr.dart';
 
 // ignore: must_be_immutable
 class BluetoothScann extends StatefulWidget {
   String function;
+  BluetoothDevice? device;
 
   // const BluetoothScann({super.key});
-  BluetoothScann({Key? key, required this.function}) : super(key: key);
+  BluetoothScann({Key? key, required this.function, required this.device})
+      : super(key: key);
 
   @override
   State<BluetoothScann> createState() => _BluetoothScannState();
@@ -27,50 +32,62 @@ class _BluetoothScannState extends State<BluetoothScann> {
 
   @override
   void dispose() {
-    controller?.dispose();
+    controller!.stopCamera();
+    controller!.dispose();
+
     super.dispose();
   }
 
   void _onQRViewCreated(QRViewController controller) {
     this.controller = controller;
     controller.scannedDataStream.listen((scanData) {
-      if (scanData.code != null && scanData.code != '') {
+      if (scanData.code != null) {
         String url = scanData.code!;
-
-        if (widget.function == 'door-unlock') {
-          _proccessUnlock(url);
-        } else if (widget.function == 'door-config') {}
+        _proccessUnlock(url);
       }
     });
   }
 
   void _proccessUnlock(String text) {
-    List<String> parts = text.split('/');
-    parts.removeWhere((part) => part.isEmpty);
-
-    if (parts.length != 5 ||
-        parts[0] != 'https:' ||
-        parts[1] != 'smartdoorlock.my.id' ||
-        parts[2] != 'door') {
-      Navigator.pop(context);
-
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          'kode QR tidak valid',
-          textAlign: TextAlign.center,
-        ),
-        duration: Duration(seconds: 2),
-      ));
-    } else {
+    if (widget.function == 'door-config') {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => DoorCommand(
-            id: parts[3],
-            name: hexToAscii(parts[4]),
+          builder: (context) => DoorConfig(
+            event: 'register',
+            device: widget.device!,
+            ssid: 'text',
+            password: 'text',
+            doorId: text,
           ),
         ),
       );
+    } else if (widget.function == 'quick-scann') {
+      List<String> parts = text.split('/');
+      parts.removeWhere((part) => part.isEmpty);
+
+      if (parts.length != 5 ||
+          parts[0] != 'https:' ||
+          parts[1] != 'smartdoorlock.my.id' ||
+          parts[2] != 'door') {
+        controller?.dispose();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const InvalidQR(),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => DoorCommand(
+              id: parts[3],
+              name: hexToAscii(parts[4]),
+            ),
+          ),
+        );
+      }
     }
   }
 
@@ -91,9 +108,7 @@ class _BluetoothScannState extends State<BluetoothScann> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.function == 'door-unlock'
-            ? 'Pindai Akses Cepat'
-            : 'Register Perangkat Kunci'),
+        title: const Text('Pindai Akses Cepat'),
       ),
       body: Column(
         children: <Widget>[
@@ -107,7 +122,7 @@ class _BluetoothScannState extends State<BluetoothScann> {
           Expanded(
             flex: 1,
             child: Center(
-              child: Text(widget.function == 'door-unlock'
+              child: Text(widget.function == 'quick-scann'
                   ? 'pindai kode QR pada pintu'
                   : 'pindai kode QR pada dashboard operator'),
             ),

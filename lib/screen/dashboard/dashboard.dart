@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -6,6 +7,7 @@ import 'package:kunci_pintu_iot/network/api.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:async';
 
+import '../bluetooth/bluetooth_util.dart';
 import '../event_bus.dart';
 import '../event.dart';
 import '../bluetooth/scann.dart';
@@ -37,7 +39,6 @@ class _DashboardState extends State<Dashboard> {
   void initState() {
     super.initState();
     getUserRole();
-    _startPingTimer();
   }
 
   void _startPingTimer() {
@@ -89,10 +90,12 @@ class _DashboardState extends State<Dashboard> {
       //     duration: Duration(seconds: 2),
       //   ));
       // }
+      _startPingTimer();
     } else if (decodedMessage['event'] == 'door-status') {
       eventBus.fire(DoorUpdate("updated"));
     } else if (decodedMessage['event'] == 'door-alert') {
-      eventBus.fire(DoorAlert(decodedMessage['data']));
+      var alertData = json.decode(decodedMessage['data']);
+      eventBus.fire(DoorAlert(alertData['name'], alertData['message']));
     } else if (decodedMessage['event'] == 'pusher_internal:member_removed') {
       eventBus.fire(DoorRemoved('updated'));
     } else if (decodedMessage['event'] == 'pusher_internal:member_added') {
@@ -148,8 +151,10 @@ class _DashboardState extends State<Dashboard> {
       _userRole = userData['role'];
     });
 
-    if (socketIsConnected == false) {
-      _connectWebsocket();
+    if (_userRole == 'operator') {
+      if (socketIsConnected == false) {
+        _connectWebsocket();
+      }
     }
   }
 
@@ -395,7 +400,7 @@ class _DashboardState extends State<Dashboard> {
                         height: 5,
                       ),
                       Text(
-                        'Utility',
+                        'Utilitas',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 18,
@@ -412,11 +417,12 @@ class _DashboardState extends State<Dashboard> {
                     ],
                   ),
                   onTap: () {
-                    // Navigator.push(
-                    //   context,
-                    //   MaterialPageRoute(
-                    //       builder: (context) => const RiwayatAkses()),
-                    // );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const BluetoothUtil(),
+                      ),
+                    );
                   },
                 ),
               ),
@@ -433,7 +439,8 @@ class _DashboardState extends State<Dashboard> {
             context,
             MaterialPageRoute(
               builder: (context) => BluetoothScann(
-                function: 'door-unlock',
+                function: 'quick-scann',
+                device: null,
               ),
             ),
           );

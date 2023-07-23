@@ -24,8 +24,12 @@ class NotificationService {
 
   notificationDetails() {
     return const NotificationDetails(
-        android: AndroidNotificationDetails('channelId', 'channelName',
-            importance: Importance.max),
+        android: AndroidNotificationDetails(
+          '21060119140133',
+          'kunci_pintu_iot',
+          importance: Importance.max,
+          styleInformation: BigTextStyleInformation(''),
+        ),
         iOS: DarwinNotificationDetails());
   }
 

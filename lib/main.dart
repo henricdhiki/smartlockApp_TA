@@ -14,10 +14,9 @@ void main() async {
   eventBus.on<DoorAlert>().listen((event) {
     NotificationService().showNotification(
       title: 'Peringatan Pintu',
-      body: event.message,
+      body: "Pintu: ${event.name}]\nPesan: ${event.message}",
     );
   });
-
   runApp(const MyApp());
 }
 

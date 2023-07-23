@@ -4,8 +4,9 @@ class DoorUpdate {
 }
 
 class DoorAlert {
+  String name;
   String message;
-  DoorAlert(this.message);
+  DoorAlert(this.name, this.message);
 }
 
 class DoorRemoved {
