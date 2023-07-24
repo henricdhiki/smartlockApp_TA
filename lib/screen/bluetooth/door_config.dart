@@ -131,28 +131,28 @@ class _DoorConfigState extends State<DoorConfig> with WidgetsBindingObserver {
             isLoading = false;
             status = "konfigurasi berhasil";
           });
-          _connection!.finish();
+          _stopConnection();
         } else if (statusRespon['status'] == 'failed') {
           setState(() {
             isSuccess = false;
             isLoading = false;
             status = "konfigurasi gagal";
           });
-          _connection!.finish();
+          _stopConnection();
         } else if (statusRespon['status'] == 'wifi_not_connected') {
           setState(() {
             isSuccess = false;
             isLoading = false;
             status = "register gagal, wifi belum terhubung";
           });
-          _connection!.finish();
+          _stopConnection();
         } else {
           setState(() {
             isSuccess = false;
             isLoading = false;
             status = "register gagal";
           });
-          _connection!.finish();
+          _stopConnection();
         }
       });
     }

@@ -34,7 +34,6 @@ class _BluetoothScannState extends State<BluetoothScann> {
   void dispose() {
     controller!.stopCamera();
     controller!.dispose();
-
     super.dispose();
   }
 
@@ -43,6 +42,7 @@ class _BluetoothScannState extends State<BluetoothScann> {
     controller.scannedDataStream.listen((scanData) {
       if (scanData.code != null) {
         String url = scanData.code!;
+        controller.stopCamera();
         _proccessUnlock(url);
       }
     });
