@@ -28,6 +28,7 @@ class DoorConfig extends StatefulWidget {
 class _DoorConfigState extends State<DoorConfig> with WidgetsBindingObserver {
   // final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
   BluetoothConnection? _connection;
+  List<int> buffer = [];
 
   String status = 'Menghubungkan ...';
   bool isLoading = true;
@@ -67,8 +68,8 @@ class _DoorConfigState extends State<DoorConfig> with WidgetsBindingObserver {
         setState(() {
           status = "Mengirim Data ...";
         });
-        _sendCommand();
         _receiveMessage();
+        _sendCommand();
       }
     } catch (e) {
       throw ('error: $e');
@@ -96,8 +97,6 @@ class _DoorConfigState extends State<DoorConfig> with WidgetsBindingObserver {
           });
         });
       } else if (widget.event == 'register') {
-        // ignore: avoid_print
-        print(widget.doorId);
         String payload =
             '{"event":"register","data":{"door_id":"${widget.doorId}"}}';
         _connection!.output.add(Uint8List.fromList(payload.codeUnits));
@@ -121,40 +120,61 @@ class _DoorConfigState extends State<DoorConfig> with WidgetsBindingObserver {
 
   void _receiveMessage() {
     if (_connection != null) {
-      _connection!.input?.listen((Uint8List data) {
-        String response = String.fromCharCodes(data);
-        var statusRespon = json.decode(response);
+      _connection!.input?.listen((data) {
+        buffer.addAll(data);
+        int separatorIndex = buffer.indexOf(10);
 
-        if (statusRespon['status'] == 'success') {
-          setState(() {
-            isSuccess = true;
-            isLoading = false;
-            status = "konfigurasi berhasil";
-          });
-          _stopConnection();
-        } else if (statusRespon['status'] == 'failed') {
-          setState(() {
-            isSuccess = false;
-            isLoading = false;
-            status = "konfigurasi gagal";
-          });
-          _stopConnection();
-        } else if (statusRespon['status'] == 'wifi_not_connected') {
-          setState(() {
-            isSuccess = false;
-            isLoading = false;
-            status = "register gagal, wifi belum terhubung";
-          });
-          _stopConnection();
-        } else {
-          setState(() {
-            isSuccess = false;
-            isLoading = false;
-            status = "register gagal";
-          });
+        // jika eol ditemukan
+        if (separatorIndex != -1) {
+          // Ambil pesan dari buffer dan konversi ke dalam bentuk string
+          List<int> messageBytes = buffer.sublist(0, separatorIndex - 1);
+          String response = String.fromCharCodes(messageBytes);
+
+          _handleRespon(response);
+
+          // Hapus pesan dari buffer (termasuk karakter khusus '\n')
+          buffer.removeRange(0, separatorIndex + 1);
+
+          // Ulangi proses jika masih ada data yang tersisa di buffer
+          if (buffer.isNotEmpty) {
+            buffer.clear();
+          }
+
           _stopConnection();
         }
       });
+    }
+  }
+
+  void _handleRespon(String message) {
+    if (message.startsWith('{') && message.endsWith('}')) {
+      var statusRespon = json.decode(message);
+
+      if (statusRespon['status'] == 'success') {
+        setState(() {
+          isSuccess = true;
+          isLoading = false;
+          status = "konfigurasi berhasil";
+        });
+      } else if (statusRespon['status'] == 'failed') {
+        setState(() {
+          isSuccess = false;
+          isLoading = false;
+          status = "konfigurasi gagal";
+        });
+      } else if (statusRespon['status'] == 'wifi_not_connected') {
+        setState(() {
+          isSuccess = false;
+          isLoading = false;
+          status = "register gagal, wifi belum terhubung";
+        });
+      } else {
+        setState(() {
+          isSuccess = false;
+          isLoading = false;
+          status = "register gagal";
+        });
+      }
     }
   }
 

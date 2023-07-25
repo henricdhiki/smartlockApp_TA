@@ -31,6 +31,8 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
   final FlutterBluetoothSerial _bluetooth = FlutterBluetoothSerial.instance;
   BluetoothConnection? _connection;
 
+  List<int> buffer = [];
+
   @override
   void initState() {
     super.initState();
@@ -40,8 +42,9 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _stopScan();
+    _stopConnection();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
@@ -55,6 +58,10 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
 
   void _stopScan() {
     _bluetooth.cancelDiscovery();
+  }
+
+  void _stopConnection() {
+    _connection!.finish();
   }
 
   void _requestAccess() async {
@@ -131,7 +138,7 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
       }
     }
 
-    await Future.delayed(const Duration(seconds: 10));
+    await Future.delayed(const Duration(seconds: 20));
 
     if (isSearching == true) {
       setState(() {
@@ -147,8 +154,8 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
       setState(() {
         _connection = connection;
       });
-      _sendCommand();
       _receiveMessage();
+      _sendCommand();
     } else {}
   }
 
@@ -177,21 +184,41 @@ class _DoorCommandState extends State<DoorCommand> with WidgetsBindingObserver {
 
   void _receiveMessage() {
     if (_connection != null) {
-      _connection!.input?.listen((Uint8List data) {
-        String response = String.fromCharCodes(data);
-        var statusRespon = json.decode(response);
+      _connection!.input?.listen((data) {
+        buffer.addAll(data);
+        int separatorIndex = buffer.indexOf(10);
 
-        if (statusRespon['status'] == 'success' ||
-            statusRespon['status'] == 'door_aleady_open') {
-          setState(() {
-            isSuccess = true;
-            isLoading = false;
-          });
-          _connection!.finish();
-        } else {
+        if (separatorIndex != -1) {
+          List<int> messageBytes = buffer.sublist(0, separatorIndex - 1);
+          String response = String.fromCharCodes(messageBytes);
+
+          _handleRespon(response);
+
+          // Hapus pesan dari buffer (termasuk karakter khusus '\n')
+          buffer.removeRange(0, separatorIndex + 1);
+
+          // Ulangi proses jika masih ada data yang tersisa di buffer
+          if (buffer.isNotEmpty) {
+            buffer.clear();
+          }
+
           _connection!.finish();
         }
       });
+    }
+  }
+
+  void _handleRespon(String message) {
+    if (message.startsWith('{') && message.endsWith('}')) {
+      var statusRespon = json.decode(message);
+
+      if (statusRespon['status'] == 'success' ||
+          statusRespon['status'] == 'door_aleady_open') {
+        setState(() {
+          isSuccess = true;
+          isLoading = false;
+        });
+      }
     }
   }
 
