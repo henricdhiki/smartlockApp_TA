@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
@@ -70,6 +72,16 @@ class _DashboardState extends State<Dashboard> {
   }
 
   void handledMessage(String message) {
+    print(message);
+    // if (context.mounted) {
+    //   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+    //     content: Text(
+    //       message,
+    //       textAlign: TextAlign.center,
+    //     ),
+    //     duration: const Duration(seconds: 2),
+    //   ));
+    // }
     var decodedMessage = json.decode(message);
 
     if (decodedMessage['event'] == 'pusher:connection_established') {
@@ -178,7 +190,7 @@ class _DashboardState extends State<Dashboard> {
               height: 15,
             ),
             SizedBox(
-              height: 120,
+              height: 150,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
@@ -187,7 +199,7 @@ class _DashboardState extends State<Dashboard> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       image: const DecorationImage(
-                        image: AssetImage('assets/timnas.png'),
+                        image: AssetImage('assets/1.png'),
                         fit: BoxFit.fill,
                       ),
                     ),
@@ -200,23 +212,13 @@ class _DashboardState extends State<Dashboard> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10),
                       image: const DecorationImage(
-                        image: AssetImage('assets/timnas.png'),
+                        image: AssetImage('assets/2.png'),
                         fit: BoxFit.fill,
                       ),
                     ),
                   ),
                   const SizedBox(
                     width: 10,
-                  ),
-                  Container(
-                    width: 260,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/timnas.png'),
-                        fit: BoxFit.fill,
-                      ),
-                    ),
                   ),
                 ],
               ),
